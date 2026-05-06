@@ -1091,7 +1091,7 @@ function initializeConquestState(): void {
     state.enableCustomAI = true;
     state.enableTeamSwitching = true;
     state.enableVO = true;
-    state.enableOOB = true;
+    state.enableOOB = false;
     state.enableVehicleSpawns = true;
     state.givePlayersNVG = false;
     state.conquestAssault = false;
