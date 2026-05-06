@@ -256,70 +256,6 @@ const playerCaptureHudLoops = new Set<number>();
 const playersByCapturePoint = new Map<number, mod.Player[]>();
 const captureProgressHudByPoint = new Map<number, CaptureProgressHudState>();
 
-type SquadTeamAssignment = {
-    squadId: number;
-    teamId: number;
-};
-
-const nextMatchSquadAssignments = new Map<number, number>();
-let nextMatchSquadAssignmentsPrepared = false;
-let nextMatchSquadAssignmentsApplied = false;
-
-function randomPlayableTeamId(): number {
-    return Math.random() < 0.5 ? TEAM_1_ID : TEAM_2_ID;
-}
-
-function getPlayerSquadId(player: mod.Player): number {
-    const squad = mod.GetSquad(player);
-    return mod.GetObjId(squad);
-}
-
-function prepareNextMatchSquadAssignments(): void {
-    nextMatchSquadAssignments.clear();
-
-    const players = mod.AllPlayers();
-
-    for (let i = 0; i < countPortalArray(players); i += 1) {
-        const player = portalArrayValue<mod.Player>(players, i);
-        if (!mod.IsPlayerValid(player)) continue;
-
-        const squadId = getPlayerSquadId(player);
-
-        if (!nextMatchSquadAssignments.has(squadId)) {
-            nextMatchSquadAssignments.set(squadId, randomPlayableTeamId());
-        }
-    }
-
-    nextMatchSquadAssignmentsPrepared = true;
-    nextMatchSquadAssignmentsApplied = false;
-}
-
-function applyPreparedTeamForPlayer(player: mod.Player): void {
-    if (!nextMatchSquadAssignmentsPrepared) return;
-    if (!mod.IsPlayerValid(player)) return;
-
-    const squadId = getPlayerSquadId(player);
-    const assignedTeamId = nextMatchSquadAssignments.get(squadId);
-
-    if (assignedTeamId === undefined) return;
-
-    mod.SetTeam(player, team(assignedTeamId));
-}
-
-function applyPreparedTeamsToAllPlayers(): void {
-    if (!nextMatchSquadAssignmentsPrepared) return;
-    if (nextMatchSquadAssignmentsApplied) return;
-
-    const players = mod.AllPlayers();
-
-    for (let i = 0; i < countPortalArray(players); i += 1) {
-        const player = portalArrayValue<mod.Player>(players, i);
-        applyPreparedTeamForPlayer(player);
-    }
-
-    nextMatchSquadAssignmentsApplied = true;
-}
-
 function defaultPlayerState(): PlayerState {
     return {
         score: 0,
@@ -1209,8 +1145,6 @@ function endConquest(): void {
     updateAllHud();
     mod.PlayMusic(mod.MusicEvents.Core_EndOfRound_Loop);
     
-    prepareNextMatchSquadAssignments();
-    
     const team1Score = getTeamScore(team(TEAM_1_ID));
     const team2Score = getTeamScore(team(TEAM_2_ID));
     if (team1Score > team2Score) {
@@ -1508,13 +1442,11 @@ export function OngoingGlobal(): void {
 export function OnGameModeStarted(): void {
     initializeConquestState();
     startConquest();
-    applyPreparedTeamsToAllPlayers();
 }
 
 // Portal event: creates per-player HUD and initializes scoreboard values.
 export function OnPlayerJoinGame(eventPlayer: mod.Player): void {
     initializePlayerState(eventPlayer);
-    applyPreparedTeamForPlayer(eventPlayer);
     createPlayerHud(eventPlayer);
     updatePlayerScoreboard(eventPlayer);
     if (state.gameOngoing) updateAllHud();
@@ -1522,7 +1454,6 @@ export function OnPlayerJoinGame(eventPlayer: mod.Player): void {
 
 // Portal event: resets temporary player state and gives optional NVG equipment.
 export function OnPlayerDeployed(eventPlayer: mod.Player): void {
-    applyPreparedTeamForPlayer(eventPlayer);
     const current = playerState(eventPlayer);
     untrackPlayerFromCurrentPoint(eventPlayer);
     current.onPoint = false;
