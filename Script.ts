@@ -256,6 +256,64 @@ const playerCaptureHudLoops = new Set<number>();
 const playersByCapturePoint = new Map<number, mod.Player[]>();
 const captureProgressHudByPoint = new Map<number, CaptureProgressHudState>();
 
+const currentMatchSquadAssignments = new Map<number, number>();
+let currentMatchSquadAssignmentsPrepared = false;
+
+function randomPlayableTeamId(): number {
+    return Math.random() < 0.5 ? TEAM_1_ID : TEAM_2_ID;
+}
+
+function getPlayerSquadId(player: mod.Player): number {
+    const squad = mod.GetSquad(player);
+    return mod.GetObjId(squad);
+}
+
+function prepareCurrentMatchSquadAssignments(): void {
+    currentMatchSquadAssignments.clear();
+
+    const players = mod.AllPlayers();
+
+    for (let i = 0; i < countPortalArray(players); i += 1) {
+        const player = portalArrayValue<mod.Player>(players, i);
+        if (!mod.IsPlayerValid(player)) continue;
+
+        const squadId = getPlayerSquadId(player);
+
+        if (!currentMatchSquadAssignments.has(squadId)) {
+            currentMatchSquadAssignments.set(squadId, randomPlayableTeamId());
+        }
+    }
+
+    currentMatchSquadAssignmentsPrepared = true;
+}
+
+function applyCurrentMatchTeamForPlayer(player: mod.Player): void {
+    if (!currentMatchSquadAssignmentsPrepared) return;
+    if (!mod.IsPlayerValid(player)) return;
+
+    const squadId = getPlayerSquadId(player);
+    let assignedTeamId = currentMatchSquadAssignments.get(squadId);
+
+    if (assignedTeamId === undefined) {
+        assignedTeamId = randomPlayableTeamId();
+        currentMatchSquadAssignments.set(squadId, assignedTeamId);
+    }
+
+    mod.SetTeam(player, team(assignedTeamId));
+}
+
+function applyCurrentMatchTeamsToAllPlayers(): void {
+    if (!currentMatchSquadAssignmentsPrepared) return;
+
+    const players = mod.AllPlayers();
+
+    for (let i = 0; i < countPortalArray(players); i += 1) {
+        const player = portalArrayValue<mod.Player>(players, i);
+        applyCurrentMatchTeamForPlayer(player);
+    }
+}
+
+
 function defaultPlayerState(): PlayerState {
     return {
         score: 0,
@@ -1441,12 +1499,17 @@ export function OngoingGlobal(): void {
 // Portal event: called when the game mode starts.
 export function OnGameModeStarted(): void {
     initializeConquestState();
+
+    prepareCurrentMatchSquadAssignments();
+    applyCurrentMatchTeamsToAllPlayers();
+
     startConquest();
 }
 
 // Portal event: creates per-player HUD and initializes scoreboard values.
 export function OnPlayerJoinGame(eventPlayer: mod.Player): void {
     initializePlayerState(eventPlayer);
+    applyCurrentMatchTeamForPlayer(eventPlayer);
     createPlayerHud(eventPlayer);
     updatePlayerScoreboard(eventPlayer);
     if (state.gameOngoing) updateAllHud();
@@ -1454,6 +1517,7 @@ export function OnPlayerJoinGame(eventPlayer: mod.Player): void {
 
 // Portal event: resets temporary player state and gives optional NVG equipment.
 export function OnPlayerDeployed(eventPlayer: mod.Player): void {
+    applyCurrentMatchTeamForPlayer(eventPlayer);
     const current = playerState(eventPlayer);
     untrackPlayerFromCurrentPoint(eventPlayer);
     current.onPoint = false;
