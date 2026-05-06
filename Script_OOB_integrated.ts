@@ -1525,7 +1525,7 @@ export function OngoingGlobal(): void {
     maybeRefreshHud();
     maybeBleedTickets();
     maybeRunAI();
-    maybeIssueAIOrders();
+    //maybeIssueAIOrders();
     checkConquestAssaultWin();
     checkEndGame();
 }
