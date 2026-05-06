@@ -1,0 +1,8 @@
+credentials.json
+.env
+config.json
+__pycache__/
+*.pyc
+dist/
+build/
+node_modules/
