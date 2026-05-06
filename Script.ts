@@ -51,7 +51,7 @@ const TEAM_2_SPAWN_PROTECTION_TRIGGER_MIN = 1200;
 const TEAM_2_SPAWN_PROTECTION_TRIGGER_MAX = 1299;
 const GLOBAL_OOB_TRIGGER_MIN = 1300;
 const GLOBAL_OOB_TRIGGER_MAX = 1399;
-const OOB_COUNTDOWN_SECONDS = 10;
+const OOB_COUNTDOWN_SECONDS = 5;
 
 // HUD colors. The first vector is text/bar color, the second is the background color.
 const TEAM_1_TEXT = () => mod.CreateVector(0, 0.8, 1);
