@@ -1396,12 +1396,6 @@ function setPlayerObjectiveVisible(player: mod.Player, visible: boolean): void {
     }
 }
 
-function setPlayerOobVisible(player: mod.Player, visible: boolean): void {
-    for (const suffix of ["OOBShade", "OOBText"]) {
-        const name = playerHudWidget(player, suffix);
-        if (mod.HasUIWidgetWithName(name)) mod.SetUIWidgetVisible(find(name), visible);
-    }
-}
 
 // Updates the per-player capture HUD that appears while standing inside an objective.
 function updatePlayerCaptureHud(player: mod.Player, point: mod.CapturePoint, occupancy: PointOccupancy, progressHud = captureProgressHud(point)): void {
