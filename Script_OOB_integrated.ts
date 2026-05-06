@@ -1503,24 +1503,12 @@ function sendAIToObjective(player: mod.Player): void {
     if (!mod.IsPlayerValid(player)) return;
     if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAISoldier)) return;
     if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAlive)) return;
-
-    const current = playerState(player);
-
-    // スポーン直後はAI命令を出さない
-    // OnPlayerDeployed 側で current.aiActionUntil = mod.GetMatchTimeElapsed() + 5; を入れておく
-    if (current.aiActionUntil < 0) {
-    current.aiActionUntil = mod.GetMatchTimeElapsed() + 5;
-    return;
-    }
-
-    if (mod.GetMatchTimeElapsed() < current.aiActionUntil) return;
-
-    if (current.aiInAction) return;
+    if (playerState(player).aiInAction) return;
 
     const objective = chooseNearestObjective(player);
     if (objective === undefined) return;
 
-    current.aiTarget = objective;
+    playerState(player).aiTarget = objective;
 
     mod.AISetMoveSpeed(player, mod.MoveSpeed.Sprint);
     mod.AIMoveToBehavior(player, mod.GetObjectPosition(objective));
@@ -1577,7 +1565,6 @@ export function OnPlayerDeployed(eventPlayer: mod.Player): void {
     //sendAIToObjective(eventPlayer);
     if (mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsAISoldier)) {
         mod.SetPlayerIncomingDamageFactor(eventPlayer, 0.5);
-        current.aiActionUntil = mod.GetMatchTimeElapsed() + 5;
     }
 }
 
@@ -1711,7 +1698,7 @@ export function OnPlayerEnterCapturePoint(eventPlayer: mod.Player, eventCaptureP
     setPlayerObjectiveVisible(eventPlayer, true);
     updatePlayerCaptureHud(eventPlayer, eventCapturePoint, pointOccupancy(eventCapturePoint), progressHud);
     startPlayerCaptureHudLoop(eventCapturePoint);
-    sendAIToObjective(eventPlayer);
+    //sendAIToObjective(eventPlayer);
 }
 
 // Portal event: hides the player capture HUD when leaving an objective.
