@@ -694,6 +694,7 @@ function stopOOB(player: mod.Player): void {
 }
 
 async function startOOB(player: mod.Player): Promise<void> {
+    if (mod.GetSoldierState(player, mod.SoldierStateBool.IsAISoldier)) return;
     const current = playerState(player);
 
     if (!state.enableOOB) return;
@@ -1714,6 +1715,7 @@ export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mo
 
 // Portal event: starts OOB when the player enters a restricted AreaTrigger.
 export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
+    if (mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsAISoldier)) return;
     if (!isOOBTriggerForPlayer(eventPlayer, eventAreaTrigger)) return;
     void startOOB(eventPlayer);
 }
