@@ -241,7 +241,7 @@ const state: ConquestState = {
     lastTicketBleedTick: -1,
     lastHudTick: -1,
     lowMusicTriggered: false,
-    enableCustomAI: true,
+    enableCustomAI: false,
     enableTeamSwitching: true,
     enableVO: true,
     enableOOB: true,
