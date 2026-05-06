@@ -1500,10 +1500,23 @@ function chooseNearestObjective(player: mod.Player): mod.CapturePoint {
 
 // Sends AI toward an objective after deploy, capture-point entry, vehicle exit, or move failure.
 function sendAIToObjective(player: mod.Player): void {
-    if (!mod.IsPlayerValid(player) || !mod.GetSoldierState(player, mod.SoldierStateBool.IsAISoldier)) return;
-    if (playerState(player).aiInAction) return;
+    if (!mod.IsPlayerValid(player)) return;
+    if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAISoldier)) return;
+    if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAlive)) return;
+
+    const current = playerState(player);
+
+    // スポーン直後はAI命令を出さない
+    // OnPlayerDeployed 側で current.aiActionUntil = mod.GetMatchTimeElapsed() + 5; を入れておく
+    if (mod.GetMatchTimeElapsed() < current.aiActionUntil) return;
+
+    if (current.aiInAction) return;
+
     const objective = chooseNearestObjective(player);
-    playerState(player).aiTarget = objective;
+    if (objective === undefined) return;
+
+    current.aiTarget = objective;
+
     mod.AISetMoveSpeed(player, mod.MoveSpeed.Sprint);
     mod.AIMoveToBehavior(player, mod.GetObjectPosition(objective));
 }
@@ -1525,7 +1538,7 @@ export function OngoingGlobal(): void {
     maybeRefreshHud();
     maybeBleedTickets();
     maybeRunAI();
-    //maybeIssueAIOrders();
+    maybeIssueAIOrders();
     checkConquestAssaultWin();
     checkEndGame();
 }
@@ -1559,6 +1572,7 @@ export function OnPlayerDeployed(eventPlayer: mod.Player): void {
     //sendAIToObjective(eventPlayer);
     if (mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsAISoldier)) {
         mod.SetPlayerIncomingDamageFactor(eventPlayer, 0.5);
+        current.aiActionUntil = mod.GetMatchTimeElapsed() + 5;
     }
 }
 
