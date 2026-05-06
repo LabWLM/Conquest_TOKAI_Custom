@@ -1556,7 +1556,7 @@ export function OnPlayerDeployed(eventPlayer: mod.Player): void {
     setPlayerObjectiveVisible(eventPlayer, false);
     setPlayerOobVisible(eventPlayer, false);
     if (state.givePlayersNVG) mod.AddEquipment(eventPlayer, mod.Gadgets.Mask_NVG);
-    sendAIToObjective(eventPlayer);
+    //sendAIToObjective(eventPlayer);
     if (mod.GetSoldierState(eventPlayer, mod.SoldierStateBool.IsAISoldier)) {
         mod.SetPlayerIncomingDamageFactor(eventPlayer, 0.5);
     }
