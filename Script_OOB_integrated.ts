@@ -241,7 +241,7 @@ const state: ConquestState = {
     lastTicketBleedTick: -1,
     lastHudTick: -1,
     lowMusicTriggered: false,
-    enableCustomAI: false,
+    enableCustomAI: true,
     enableTeamSwitching: true,
     enableVO: true,
     enableOOB: true,
@@ -1087,7 +1087,7 @@ function initializeConquestState(): void {
     captureProgressHudByPoint.clear();
     state.initialized = true;
     state.gameOngoing = false;
-    state.enableCustomAI = false;
+    state.enableCustomAI = true;
     state.enableTeamSwitching = true;
     state.enableVO = true;
     state.enableOOB = true;
