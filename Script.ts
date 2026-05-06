@@ -45,6 +45,13 @@ const TICK_SOUND_TAKING_GLOBAL_SLOT = 44;
 const CAPTURE_TICK_SOUND_INTERVAL = 10;
 const PLAYER_CAPTURE_HUD_INTERVAL_SECONDS = 0.1;
 const AI_ORDER_INTERVAL_SECONDS = 5;
+const TEAM_1_SPAWN_PROTECTION_TRIGGER_MIN = 1100;
+const TEAM_1_SPAWN_PROTECTION_TRIGGER_MAX = 1199;
+const TEAM_2_SPAWN_PROTECTION_TRIGGER_MIN = 1200;
+const TEAM_2_SPAWN_PROTECTION_TRIGGER_MAX = 1299;
+const GLOBAL_OOB_TRIGGER_MIN = 1300;
+const GLOBAL_OOB_TRIGGER_MAX = 1399;
+const OOB_COUNTDOWN_SECONDS = 10;
 
 // HUD colors. The first vector is text/bar color, the second is the background color.
 const TEAM_1_TEXT = () => mod.CreateVector(0, 0.8, 1);
@@ -1284,6 +1291,100 @@ function createPlayerHud(player: mod.Player): void {
     setPlayerOobVisible(player, false);
 }
 
+function setPlayerOobVisible(player: mod.Player, visible: boolean): void {
+    for (const suffix of ["OOBShade", "OOBText"]) {
+        const name = playerHudWidget(player, suffix);
+        if (mod.HasUIWidgetWithName(name)) mod.SetUIWidgetVisible(find(name), visible);
+    }
+}
+
+function isAreaTriggerIdInRange(areaTrigger: mod.AreaTrigger, minId: number, maxId: number): boolean {
+    const id = mod.GetObjId(areaTrigger);
+    return id >= minId && id <= maxId;
+}
+
+function shouldApplyOutOfBounds(player: mod.Player, areaTrigger: mod.AreaTrigger): boolean {
+    if (!mod.IsPlayerValid(player)) return false;
+
+    const isTeam1SpawnProtection =
+        isAreaTriggerIdInRange(
+            areaTrigger,
+            TEAM_1_SPAWN_PROTECTION_TRIGGER_MIN,
+            TEAM_1_SPAWN_PROTECTION_TRIGGER_MAX,
+        ) && mod.Equals(mod.GetTeam(player), team(TEAM_2_ID));
+
+    const isTeam2SpawnProtection =
+        isAreaTriggerIdInRange(
+            areaTrigger,
+            TEAM_2_SPAWN_PROTECTION_TRIGGER_MIN,
+            TEAM_2_SPAWN_PROTECTION_TRIGGER_MAX,
+        ) && mod.Equals(mod.GetTeam(player), team(TEAM_1_ID));
+
+    const isGlobalOutOfBounds =
+        isAreaTriggerIdInRange(
+            areaTrigger,
+            GLOBAL_OOB_TRIGGER_MIN,
+            GLOBAL_OOB_TRIGGER_MAX,
+        );
+
+    return isTeam1SpawnProtection || isTeam2SpawnProtection || isGlobalOutOfBounds;
+}
+
+function shouldClearOutOfBounds(player: mod.Player, areaTrigger: mod.AreaTrigger): boolean {
+    if (!mod.IsPlayerValid(player)) return true;
+    if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAlive)) return true;
+    return shouldApplyOutOfBounds(player, areaTrigger);
+}
+
+async function startOutOfBoundsForPlayer(player: mod.Player): Promise<void> {
+    if (!state.enableOOB) return;
+    if (!mod.IsPlayerValid(player)) return;
+    if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAlive)) return;
+
+    const current = playerState(player);
+    if (current.ignoreOOB || current.outOfBounds) return;
+
+    current.outOfBounds = true;
+    current.captureTick = OOB_COUNTDOWN_SECONDS;
+
+    mod.SkipManDown(player, true);
+    setPlayerOobVisible(player, true);
+
+    for (let remaining = OOB_COUNTDOWN_SECONDS; remaining > 0; remaining -= 1) {
+        current.captureTick = remaining;
+
+        await mod.Wait(1);
+
+        if (!mod.IsPlayerValid(player)) break;
+        if (!current.outOfBounds) break;
+        if (!mod.GetSoldierState(player, mod.SoldierStateBool.IsAlive)) break;
+    }
+
+    if (
+        mod.IsPlayerValid(player) &&
+        current.outOfBounds &&
+        mod.GetSoldierState(player, mod.SoldierStateBool.IsAlive)
+    ) {
+        mod.DealDamage(player, 10000, player);
+    }
+
+    disableOutOfBoundsForPlayer(player);
+}
+
+function disableOutOfBoundsForPlayer(player: mod.Player): void {
+    const current = playerState(player);
+
+    current.outOfBounds = false;
+    current.captureTick = 0;
+
+    if (mod.IsPlayerValid(player)) {
+        mod.SkipManDown(player, false);
+        setPlayerOobVisible(player, false);
+    }
+}
+
+
+
 function playerHudWidget(player: mod.Player, suffix: string): string {
     return widgetName(["ConquestPlayerHUD", player, suffix]);
 }
@@ -1519,6 +1620,7 @@ export function OnPlayerJoinGame(eventPlayer: mod.Player): void {
 export function OnPlayerDeployed(eventPlayer: mod.Player): void {
     applyCurrentMatchTeamForPlayer(eventPlayer);
     const current = playerState(eventPlayer);
+    if (current.outOfBounds) disableOutOfBoundsForPlayer(eventPlayer);
     untrackPlayerFromCurrentPoint(eventPlayer);
     current.onPoint = false;
     current.outOfBounds = false;
@@ -1682,19 +1784,15 @@ export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mo
 }
 
 // Portal event: shows the out-of-bounds warning UI when enabled.
-export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, _eventAreaTrigger: mod.AreaTrigger): void {
-    void _eventAreaTrigger;
-    const current = playerState(eventPlayer);
-    if (!state.enableOOB || current.ignoreOOB) return;
-    current.outOfBounds = true;
-    setPlayerOobVisible(eventPlayer, true);
+export function OnPlayerEnterAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
+    if (!shouldApplyOutOfBounds(eventPlayer, eventAreaTrigger)) return;
+    void startOutOfBoundsForPlayer(eventPlayer);
 }
 
 // Portal event: hides the out-of-bounds warning UI.
-export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, _eventAreaTrigger: mod.AreaTrigger): void {
-    void _eventAreaTrigger;
-    playerState(eventPlayer).outOfBounds = false;
-    setPlayerOobVisible(eventPlayer, false);
+export function OnPlayerExitAreaTrigger(eventPlayer: mod.Player, eventAreaTrigger: mod.AreaTrigger): void {
+    if (!shouldClearOutOfBounds(eventPlayer, eventAreaTrigger)) return;
+    disableOutOfBoundsForPlayer(eventPlayer);
 }
 
 // Portal event: makes damaged AI focus the attacker.
