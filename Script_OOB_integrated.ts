@@ -671,6 +671,7 @@ function initializePlayerState(player: mod.Player): void {
 function isOOBTriggerForPlayer(player: mod.Player, trigger: mod.AreaTrigger): boolean {
     if (!state.enableOOB) return false;
     if (!mod.IsPlayerValid(player)) return false;
+    if (mod.GetSoldierState(player, mod.SoldierStateBool.IsAISoldier)) return false;
 
     const triggerId = mod.GetObjId(trigger);
     const playerTeamId = teamId(mod.GetTeam(player));
