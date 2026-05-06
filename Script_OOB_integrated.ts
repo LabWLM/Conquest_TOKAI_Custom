@@ -1086,7 +1086,7 @@ function initializeConquestState(): void {
     captureProgressHudByPoint.clear();
     state.initialized = true;
     state.gameOngoing = false;
-    state.enableCustomAI = true;
+    state.enableCustomAI = false;
     state.enableTeamSwitching = true;
     state.enableVO = true;
     state.enableOOB = true;
