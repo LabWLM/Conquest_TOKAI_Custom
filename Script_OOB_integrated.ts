@@ -1508,6 +1508,11 @@ function sendAIToObjective(player: mod.Player): void {
 
     // スポーン直後はAI命令を出さない
     // OnPlayerDeployed 側で current.aiActionUntil = mod.GetMatchTimeElapsed() + 5; を入れておく
+    if (current.aiActionUntil < 0) {
+    current.aiActionUntil = mod.GetMatchTimeElapsed() + 5;
+    return;
+    }
+
     if (mod.GetMatchTimeElapsed() < current.aiActionUntil) return;
 
     if (current.aiInAction) return;
