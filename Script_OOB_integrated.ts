@@ -669,7 +669,7 @@ function initializePlayerState(player: mod.Player): void {
 }
 
 function isOOBTriggerForPlayer(player: mod.Player, trigger: mod.AreaTrigger): boolean {
-    if (!state.enableOOB) return false;
+    if (!state.enableOOB) return true;
     if (!mod.IsPlayerValid(player)) return false;
     if (mod.GetSoldierState(player, mod.SoldierStateBool.IsAISoldier)) return false;
 
@@ -1091,7 +1091,7 @@ function initializeConquestState(): void {
     state.enableCustomAI = true;
     state.enableTeamSwitching = true;
     state.enableVO = true;
-    state.enableOOB = false;
+    state.enableOOB = true;
     state.enableVehicleSpawns = true;
     state.givePlayersNVG = false;
     state.conquestAssault = false;
