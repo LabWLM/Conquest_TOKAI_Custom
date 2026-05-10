@@ -1711,7 +1711,7 @@ export function OnPlayerExitCapturePoint(eventPlayer: mod.Player, _eventCaptureP
     setPlayerObjectiveVisible(eventPlayer, false);
 }
 
-// Portal event: optional team balancing through interact points 998 and 999. アンディのを改変する。買っているチームから負けているチームへのみ移動する
+// Portal event: optional team balancing through interact points 998 and 999. アンディのを改変する。勝っているチームから負けているチームへのみ移動する
 export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): void {
     if (!state.enableTeamSwitching) return;
 
