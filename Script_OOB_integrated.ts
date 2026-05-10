@@ -1711,12 +1711,36 @@ export function OnPlayerExitCapturePoint(eventPlayer: mod.Player, _eventCaptureP
     setPlayerObjectiveVisible(eventPlayer, false);
 }
 
-// Portal event: optional team switching through interact points with IDs 1 and 2.
+// Portal event: optional team balancing through interact points 998 and 999. アンディのを改変する。買っているチームから負けているチームへのみ移動する
 export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): void {
     if (!state.enableTeamSwitching) return;
+
     const id = mod.GetObjId(eventInteractPoint);
-    if (id === TEAM_1_ID) mod.SetTeam(eventPlayer, team(TEAM_1_ID));
-    if (id === TEAM_2_ID) mod.SetTeam(eventPlayer, team(TEAM_2_ID));
+    const playerTeamId = teamId(mod.GetTeam(eventPlayer));
+
+    // Team1 が負けている時：
+    // InteractPoint 998 を Team2 プレイヤーが使ったら Team1 へ移動
+    if (
+        id === 998 &&
+        getTeamScore(team(TEAM_1_ID)) < getTeamScore(team(TEAM_2_ID)) &&
+        playerTeamId === TEAM_2_ID
+    ) {
+        mod.SetTeam(eventPlayer, team(TEAM_1_ID));
+        updateAllHud();
+        return;
+    }
+
+    // Team2 が負けている時：
+    // InteractPoint 999 を Team1 プレイヤーが使ったら Team2 へ移動
+    if (
+        id === 999 &&
+        getTeamScore(team(TEAM_2_ID)) < getTeamScore(team(TEAM_1_ID)) &&
+        playerTeamId === TEAM_1_ID
+    ) {
+        mod.SetTeam(eventPlayer, team(TEAM_2_ID));
+        updateAllHud();
+        return;
+    }
 }
 
 // Portal event: starts OOB when the player enters a restricted AreaTrigger.
