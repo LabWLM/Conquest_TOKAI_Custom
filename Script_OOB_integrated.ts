@@ -1711,15 +1711,15 @@ export function OnPlayerExitCapturePoint(eventPlayer: mod.Player, _eventCaptureP
     setPlayerObjectiveVisible(eventPlayer, false);
 }
 
-// Portal event: optional team balancing through interact points 998 and 999. アンディのを改変する。勝っているチームから負けているチームへのみ移動する
+// Portal event: optional team balancing through interact points 998 and 999. only active win to loose
 export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mod.InteractPoint): void {
     if (!state.enableTeamSwitching) return;
 
     const id = mod.GetObjId(eventInteractPoint);
     const playerTeamId = teamId(mod.GetTeam(eventPlayer));
 
-    // Team1 が負けている時：
-    // InteractPoint 998 を Team2 プレイヤーが使ったら Team1 へ移動
+    // Team1 loosing：
+    // if use InteractPoint 998 team2,move Team1
     if (
         id === 998 &&
         getTeamScore(team(TEAM_1_ID)) < getTeamScore(team(TEAM_2_ID)) &&
@@ -1730,8 +1730,8 @@ export function OnPlayerInteract(eventPlayer: mod.Player, eventInteractPoint: mo
         return;
     }
 
-    // Team2 が負けている時：
-    // InteractPoint 999 を Team1 プレイヤーが使ったら Team2 へ移動
+    // Team2 loosing：
+    // if use InteractPoint 999 team1, move teame2
     if (
         id === 999 &&
         getTeamScore(team(TEAM_2_ID)) < getTeamScore(team(TEAM_1_ID)) &&
